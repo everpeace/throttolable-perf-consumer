@@ -11,7 +11,7 @@ import scala.concurrent.duration._
 object ThrottolableConsumer extends App {
 
   val config                = ConfigFactory.load()
-  implicit val system = ActorSystem("FakeConsumer", config)
+  implicit val system = ActorSystem("ThrottolableConsumer", config)
   implicit val materializer = ActorMaterializer()
 
   val (control, done) = fakeConsumerFlow.toMat(Sink.ignore)(Keep.both).run()

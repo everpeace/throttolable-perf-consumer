@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd" >
+<log4j:configuration>
+    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[%p] [%d] [%t] [%c] - %m%n"/>
+        </layout>
+    </appender>
+
+    <appender name="async" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="1024"/>
+        <appender-ref ref="console"/>
+    </appender>
+
+    <logger name="akka.actor" additivity="false">
+        <level value="ERROR" />
+        <appender-ref ref="async" />
+    </logger>
+
+    <logger name="org.apache.zookeeper" additivity="false">
+        <level value="ERROR" />
+        <appender-ref ref="async" />
+    </logger>
+
+
+    <logger name="org.apache.kafka" additivity="false">
+        <level value="ERROR" />
+        <appender-ref ref="async" />
+    </logger>
+
+    <root>
+        <level value="INFO" />
+        <appender-ref ref="async"/>
+    </root>
+</log4j:configuration>

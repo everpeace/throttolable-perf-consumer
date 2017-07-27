@@ -28,6 +28,7 @@ lazy val root = (project in file("."))
       setReleaseVersion,
       commitReleaseVersion,
       tagRelease,
+      runClean,
       ReleaseStep(releaseStepTask(publish in Docker)),
       setNextVersion,
       commitNextVersion,

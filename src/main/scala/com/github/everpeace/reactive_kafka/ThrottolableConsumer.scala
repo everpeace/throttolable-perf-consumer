@@ -14,7 +14,7 @@ object ThrottolableConsumer extends App {
   implicit val system = ActorSystem("ThrottolableConsumer", config)
   implicit val materializer = ActorMaterializer()
 
-  val (control, done) = fakeConsumerFlow.toMat(Sink.ignore)(Keep.both).run()
+  val (control, done) = throttolableConsumerFlow.toMat(Sink.ignore)(Keep.both).run()
 
   sys.addShutdownHook({
     Await.result(control.shutdown(), 10 seconds)

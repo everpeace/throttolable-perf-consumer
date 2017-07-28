@@ -2,6 +2,7 @@ package com.github.everpeace
 
 import akka.Done
 import akka.actor.ActorSystem
+import akka.kafka.ConsumerMessage.CommittableOffsetBatch
 import akka.kafka.scaladsl.Consumer
 import akka.kafka.{ConsumerSettings, Subscriptions}
 import akka.stream.scaladsl.Source
@@ -13,8 +14,8 @@ import scala.concurrent.duration.Duration
 
 package object reactive_kafka {
 
-  def fakeConsumerFlow(implicit system: ActorSystem, mat: ActorMaterializer): Source[Done, Consumer.Control] = {
-    val c = system.settings.config.getConfig("fake-consumer")
+  def throttolableConsumerFlow(implicit system: ActorSystem, mat: ActorMaterializer): Source[Done, Consumer.Control] = {
+    val c = system.settings.config.getConfig("throttolable-consumer")
     implicit val ec = system.dispatcher
 
     val bootstrapServers = c getString "bootstrap-servers"
@@ -25,6 +26,8 @@ package object reactive_kafka {
     val throttlePer = Duration.fromNanos((c getDuration "throttle-per").toNanos)
     val throttleBurst = c getInt "throttle-burst"
     val logPer = c getInt "log-per"
+    val offsetCommitBatchSize = c getInt "offset-commit-batch-size"
+    val offsetCommitParallelism = c getInt "offset-commit-parallelism"
 
     val consumerSettings =
       ConsumerSettings(system, new ByteArrayDeserializer, new StringDeserializer)
@@ -48,9 +51,9 @@ package object reactive_kafka {
         counter += 1
         msg :: Nil
       }
-    }
-    ).mapAsync(1) { msg =>
-      msg.committableOffset.commitScaladsl()
+    }).batch(max = offsetCommitBatchSize, m => CommittableOffsetBatch.empty.updated(m.committableOffset))((batch, m) => batch.updated(m.committableOffset))
+      .mapAsync(offsetCommitParallelism) { batch =>
+      batch.commitScaladsl()
     }
   }
 }

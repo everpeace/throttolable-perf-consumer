@@ -18,13 +18,15 @@ class ThrottolableConsumerFlowSpec extends FlatSpec with Matchers with EmbeddedK
   val zkPort = temporaryServerPort()
   val TOPIC = "topic1"
 
-  implicit val system = ActorSystem("FakeConsumerFlowSpec", ConfigFactory.parseString(
+  implicit val system = ActorSystem("ThrottolableConsumerFlowSpec", ConfigFactory.parseString(
     s"""
-      |fake-consumer {
+      |throttolable-consumer {
       |  bootstrap-servers = "localhost:$kafkaPort"
       |  topic = "$TOPIC"
-      |  group-id = "fake-consumer-flow-spec"
+      |  group-id = "throttolable-consumer-flow-spec"
       |  throttle = 0
+      |  offset-commit-batch-size = 2
+      |  offset-commit-parallelism = 10
       |}
     """.stripMargin))
   implicit val materializer = ActorMaterializer()
@@ -45,11 +47,11 @@ class ThrottolableConsumerFlowSpec extends FlatSpec with Matchers with EmbeddedK
     createCustomTopic("topic1")
     val p = TestProbe("sinkProbe")
 
-    val control = fakeConsumerFlow.toMat(Sink.actorRef(p.ref, Done))(Keep.left).run()
+    val control = throttolableConsumerFlow.toMat(Sink.actorRef(p.ref, Done))(Keep.left).run()
 
     Thread.sleep((5 second).toMillis)
 
-    val n = 1
+    val n = 100
     createMsg(n).foreach(kv => publishToKafka(TOPIC, kv._1, kv._2))
 
     (0 until n).foreach(_ => p.expectMsgType[Done])
